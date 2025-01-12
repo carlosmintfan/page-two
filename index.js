@@ -6,7 +6,7 @@
  * Module dependencies.
  */
 
-var pathtoRegexp = require('path-to-regexp');
+import pathtoRegexp from 'path-to-regexp';
 
 /**
  * Short-cuts for global-object checks
@@ -814,5 +814,4 @@ Route.prototype.match = function(path, params) {
  */
 
 var globalPage = createPage();
-module.exports = globalPage;
-module.exports.default = globalPage;
+export { globalPage, globalPage as default };
