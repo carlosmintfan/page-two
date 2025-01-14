@@ -1,5 +1,5 @@
 /* globals before, after, chai, expect, page, describe, it */
-(function() {
+(async function() {
 
   'use strict';
 
@@ -22,7 +22,7 @@
     jsdomSupport;
 
   if (isNode) {
-    jsdomSupport = require('./support/jsdom');
+    jsdomSupport = await import('./support/jsdom');
   }
 
   before(function() {
