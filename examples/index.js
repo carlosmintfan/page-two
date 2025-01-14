@@ -15,7 +15,7 @@ var app = express();
 // app.use(express.logger('dev'));
 
 app.set('views', __dirname);
-app.set('view engine', 'jade');
+app.set('view engine', 'pug');
 app.enable('strict routing');
 
 // load examples
