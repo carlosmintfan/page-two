@@ -1,11 +1,11 @@
 {
-  "name": "page",
-  "description": "Tiny client-side router",
-  "version": "1.11.6",
+  "name": "page-two",
+  "description": "Tiny client-side router – fork of page",
+  "version": "1.0.0",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git://github.com/visionmedia/page.js.git"
+    "url": "git://github.com/carlosmintfan/page.js.git"
   },
   "component": {
     "scripts": {
