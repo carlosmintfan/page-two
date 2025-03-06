@@ -1,7 +1,7 @@
 {
   "name": "page-two",
   "description": "Tiny client-side router – fork of page",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "license": "MIT",
   "type": "module",
   "repository": {
