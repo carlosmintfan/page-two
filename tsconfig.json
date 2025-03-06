@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "./dist",
+        "module": "ESNext",
+        "target": "ES2015",
+        "esModuleInterop": true,
+        "moduleResolution": "bundler",
+    },
+    "include": ["src/page.ts"]
+}

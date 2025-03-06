@@ -1,33 +1,312 @@
-/* globals require, module */
+import { pathToRegexp } from 'path-to-regexp';
 
-'use strict';
+interface Static {
+    create(options?: Partial<Options>): Static;
+    /**
+     * Expose Route
+     */
+    Route: Route;
+    /**
+     * Export Context
+     */
+    Context: Context;
+    /**
+     *  Defines a route mapping path to the given callback(s).
+     *
+     *      page('/', user.list)
+     *      page('/user/:id', user.load, user.show)
+     *      page('/user/:id/edit', user.load, user.edit)
+     *      page('*', notfound)
+     *
+     *  Links that are not of the same origin are disregarded and will not be dispatched.
+     */
+    (path: string, ...callbacks: Callback[]): void;
+    /**
+     *  Defines a route mapping path to the given callback(s).
+     *
+     *      page('/', user.list)
+     *      page('/user/:id', user.load, user.show)
+     *      page('/user/:id/edit', user.load, user.edit)
+     *      page('*', notfound)
+     *
+     *  Links that are not of the same origin are disregarded and will not be dispatched.
+     */
+    (path: RegExp, ...callbacks: Callback[]): void;
+    /**
+     * This is equivalent to page('*', callback) for generic "middleware".
+     */
+    (callback: Callback): void;
+    /**
+     *  Navigate to the given path.
+     *
+     *      $('.view').click(function(e){
+     *        page('/user/12')
+     *        e.preventDefault()
+     *      })
+     */
+    (path: string): void;
+    /**
+     * Setup redirect form one path to other.
+     */
+    (fromPath: string, toPath: string): void;
+    /**
+     * Register page's popstate / click bindings. If you're doing selective binding you'll like want to pass { click: false } to specify this yourself. The following options are available:
+     *
+     *     - click bind to click events [true]
+     *     - popstate bind to popstate[true]
+     *     - dispatch perform initial dispatch[true]
+     *     - hashbang add #!before urls[false]
+     *
+     * If you wish to load serve initial content from the server you likely will want to set dispatch to false.
+     */
+    (options: Partial<Options>): void;
+    /**
+     * Register page's popstate / click bindings. If you're doing selective binding you'll like want to pass { click: false } to specify this yourself. The following options are available:
+     *
+     *     - click bind to click events [true]
+     *     - popstate bind to popstate[true]
+     *     - dispatch perform initial dispatch[true]
+     *     - hashbang add #!before urls[false]
+     *
+     * If you wish to load serve initial content from the server you likely will want to set dispatch to false.
+     */
+    (): void;
+
+    /**
+     * Identical to page(fromPath, toPath)
+     */
+    redirect(fromPath: string, toPath: string): void;
+    /**
+     * Calling page.redirect with only a string as the first parameter redirects to another route.
+     * Waits for the current route to push state and after replaces it with the new one leaving the browser history clean.
+     *
+     *      page('/default', function(){
+     *        // some logic to decide which route to redirect to
+     *        if(admin) {
+     *          page.redirect('/admin');
+     *        } else {
+     *          page.redirect('/guest');
+     *        }
+     *      });
+     *
+     *      page('/default');
+     */
+    redirect(page: string): void;
+    /**
+     * Replace `path` with optional `state` object.
+     */
+    replace(path: string, state?: any, init?: boolean, dispatch?: boolean): Context;
+    /**
+     *  Navigate to the given path.
+     *
+     *      $('.view').click(function(e){
+     *        page('/user/12')
+     *        e.preventDefault()
+     *      })
+     *
+     * Identical to page(path).
+     */
+    show(path: string): void;
+    /**
+     * Get or set the strict path matching mode to enable.
+     * If enabled /blog will not match "/blog/" and /blog/ will not match "/blog".
+     */
+    strict(enable: boolean): void;
+    strict(): boolean;
+    /**
+     * Register page's popstate / click bindings. If you're doing selective binding you'll like want to pass { click: false } to specify this yourself. The following options are available:
+     *
+     *     - click bind to click events [true]
+     *     - popstate bind to popstate[true]
+     *     - dispatch perform initial dispatch[true]
+     *     - hashbang add #!before urls[false]
+     *
+     * If you wish to load serve initial content from the server you likely will want to set dispatch to false.
+     *
+     * Identical to page([options]).
+     */
+    start(options: Partial<Options>): void;
+    /**
+     * Register page's popstate / click bindings. If you're doing selective binding you'll like want to pass { click: false } to specify this yourself. The following options are available:
+     *
+     *     - click bind to click events [true]
+     *     - popstate bind to popstate[true]
+     *     - dispatch perform initial dispatch[true]
+     *     - hashbang add #!before urls[false]
+     *
+     * If you wish to load serve initial content from the server you likely will want to set dispatch to false.
+     */
+    start(): void;
+    /**
+     * Unbind both the popstate and click handlers.
+     */
+    stop(): void;
+    /**
+     * Get or set the base path. For example if page.js is operating within /blog/* set the base path to "/blog".
+     */
+    base(path?: string): void;
+    /**
+     * Defines an exit route mapping path to the given callback(s).
+     *
+     * Exit routes are called when a page changes, using the context from the previous change. For example:
+     *
+     *     page('/sidebar', function(ctx, next) {
+     *       sidebar.open = true
+     *       next()
+     *     })
+     *
+     *     page.exit('/sidebar', function(next) {
+     *       sidebar.open = false
+     *       next()
+     *     })
+     */
+    exit(path: string, callback: Callback, moreCallbacks?: Callback[]): void;
+    /**
+     * Equivalent to page.exit('*', callback).
+     */
+    exit(callback: Callback): void;
+
+    /**
+     * This is the click handler used by page to handle routing when a user clicks an anchor like `<a href="/user/profile">`
+     */
+    clickHandler(e: MouseEvent): void;
+
+    /**
+     * Length of the history stack
+     */
+    len: number;
+
+    /**
+     * Current path
+     */
+    current: string;
+}
+
+interface Route {
+    /**
+     * Initialize `Route` with the given HTTP `path` & `options`
+     * @param {string}  path    path
+     * @param {Options} options Options
+     */
+    new(path: string, options?: RouteOptions): Route;
+    /**
+     * Return route middleware with the given callback `fn()`.
+     */
+    middleware(fn: Callback): Callback;
+    /**
+     * Check if this route matches `path`, if so populate `params`.
+     * @param  {string}  path   path
+     * @param  {{}}    params params
+     * @return {boolean}       true if matched, false otherwise
+     */
+    match(path: string, params?: {}): boolean;
+}
+
+interface RouteOptions {
+    /**
+     * enable case-sensitive routes
+     */
+    sensitive?: boolean | undefined;
+    /**
+     * enable strict matching for trailing slashes
+     */
+    strict?: boolean | undefined;
+}
+
+interface Options {
+    /**
+     * bind to click events (default = true)
+     */
+    click: boolean;
+    /**
+     * bind to popstate (default = true)
+     */
+    popstate: boolean;
+    /**
+     * perform initial dispatch (default = true)
+     */
+    dispatch: boolean;
+    /**
+     * add #!before urls (default = false)
+     */
+    hashbang: boolean;
+    /**
+     * remove URL encoding from path components
+     */
+    decodeURLComponents: boolean;
+    /**
+     * provide a window to control (by default it will control the main window)
+     */
+    window: Window;
+}
+
+interface Callback {
+    (ctx: Context, next: () => any): any;
+}
 
 /**
- * Module dependencies.
+ * Routes are passed Context objects, these may be used to share state, for example ctx.user =, as well as the history "state" ctx.state that the pushState API provides.
  */
+interface Context {
+    /**
+     * Initialize a new "request" `Context` with the given `path` and optional initial `state`.
+     * @param {string} path  path
+     * @param {any}    state state
+     */
+    new(path: string, state?: any): Context;
+    [idx: string]: any;
+    /**
+     * Saves the context using replaceState(). For example this is useful for caching HTML or other resources that were loaded for when a user presses "back".
+     */
+    save: () => void;
+    /**
+     * Push state
+     */
+    pushState: () => void;
+    /**
+     *  If true, marks the context as handled to prevent default 404 behaviour. For example this is useful for the routes with interminate quantity of the callbacks.
+     */
+    handled: boolean;
+    /**
+     *  Pathname including the "base" (if any) and query string "/admin/login?foo=bar#zee".
+     */
+    canonicalPath: string;
+    /**
+     *  Pathname and query string "/login?foo=bar#zee".
+     */
+    path: string;
+    /**
+     *  Query string void of leading ? such as "foo=bar", defaults to "".
+     */
+    querystring: string;
+    /**
+     *  Hash void of leading # such as "zee", defaults to "".
+     */
+    hash: string;
+    /**
+     *  The pathname void of query string "/login".
+     */
+    pathname: string;
+    /**
+     *  The pushState state object.
+     */
+    state: any;
+    /**
+     * The pushState title.
+     */
+    title: string;
+    /**
+     * The parameters from the url, e.g. /user/:id => Context.params.id
+     */
+    params: any;
+}
 
-import pathtoRegexp from 'path-to-regexp';
-
-/**
- * Short-cuts for global-object checks
- */
-
-var hasDocument = ('undefined' !== typeof document);
-var hasWindow = ('undefined' !== typeof window);
-var hasHistory = ('undefined' !== typeof history);
-var hasProcess = typeof process !== 'undefined';
+const hasProcess = typeof process !== 'undefined';
 
 /**
  * Detect click event
  */
-var clickEvent = hasDocument && document.ontouchstart ? 'touchstart' : 'click';
-
-/**
- * To work properly with the URL
- * history.location generated polyfill in https://github.com/devote/HTML5-History-API
- */
-
-var isLocation = hasWindow && !!(window.history.location || window.location);
+const clickEvent = document.ontouchstart ? 'touchstart' : 'click';
 
 /**
  * The page instance
@@ -55,37 +334,32 @@ function Page() {
 /**
  * Configure the instance of page. This can be called multiple times.
  *
- * @param {Object} options
  * @api public
  */
 
-Page.prototype.configure = function(options) {
-  var opts = options || {};
+Page.prototype.configure = function(options: Options) {
+  var opts = options || {} as Options;
 
-  this._window = opts.window || (hasWindow && window);
+  this._window = opts.window || window;
   this._decodeURLComponents = opts.decodeURLComponents !== false;
-  this._popstate = opts.popstate !== false && hasWindow;
-  this._click = opts.click !== false && hasDocument;
+  this._popstate = opts.popstate !== false;
+  this._click = opts.click !== false;
   this._hashbang = !!opts.hashbang;
 
   var _window = this._window;
   if(this._popstate) {
     _window.addEventListener('popstate', this._onpopstate, false);
-  } else if(hasWindow) {
+  } else {
     _window.removeEventListener('popstate', this._onpopstate, false);
   }
 
   if (this._click) {
     _window.document.addEventListener(clickEvent, this.clickHandler, false);
-  } else if(hasDocument) {
+  } else {
     _window.document.removeEventListener(clickEvent, this.clickHandler, false);
   }
 
-  if(this._hashbang && hasWindow && !hasHistory) {
-    _window.addEventListener('hashchange', this._onpopstate, false);
-  } else if(hasWindow) {
-    _window.removeEventListener('hashchange', this._onpopstate, false);
-  }
+  _window.removeEventListener('hashchange', this._onpopstate, false);
 };
 
 /**
@@ -95,7 +369,7 @@ Page.prototype.configure = function(options) {
  * @api public
  */
 
-Page.prototype.base = function(path) {
+Page.prototype.base = function(path: string) {
   if (0 === arguments.length) return this._base;
   this._base = path;
 };
@@ -109,9 +383,9 @@ Page.prototype.base = function(path) {
 Page.prototype._getBase = function() {
   var base = this._base;
   if(!!base) return base;
-  var loc = hasWindow && this._window && this._window.location;
+  var loc = this._window && this._window.location;
 
-  if(hasWindow && this._hashbang && loc && loc.protocol === 'file:') {
+  if(this._hashbang && loc && loc.protocol === 'file:') {
     base = loc.pathname;
   }
 
@@ -125,7 +399,7 @@ Page.prototype._getBase = function() {
  * @api public
  */
 
-Page.prototype.strict = function(enable) {
+Page.prototype.strict = function(enable: boolean) {
   if (0 === arguments.length) return this._strict;
   this._strict = enable;
 };
@@ -140,29 +414,27 @@ Page.prototype.strict = function(enable) {
  *    - `popstate` bind to popstate [true]
  *    - `dispatch` perform initial dispatch [true]
  *
- * @param {Object} options
  * @api public
  */
 
-Page.prototype.start = function(options) {
-  var opts = options || {};
+Page.prototype.start = function(options: Options) {
+  var opts = options || {} as Options;
   this.configure(opts);
 
   if (false === opts.dispatch) return;
   this._running = true;
 
   var url;
-  if(isLocation) {
-    var window = this._window;
-    var loc = window.location;
 
-    if(this._hashbang && ~loc.hash.indexOf('#!')) {
-      url = loc.hash.substr(2) + loc.search;
-    } else if (this._hashbang) {
-      url = loc.search + loc.hash;
-    } else {
-      url = loc.pathname + loc.search + loc.hash;
-    }
+  var window = this._window;
+  var loc = window.location;
+
+  if(this._hashbang && ~loc.hash.indexOf('#!')) {
+    url = loc.hash.substr(2) + loc.search;
+  } else if (this._hashbang) {
+    url = loc.search + loc.hash;
+  } else {
+    url = loc.pathname + loc.search + loc.hash;
   }
 
   this.replace(url, null, true, opts.dispatch);
@@ -182,22 +454,17 @@ Page.prototype.stop = function() {
 
   var window = this._window;
   this._click && window.document.removeEventListener(clickEvent, this.clickHandler, false);
-  hasWindow && window.removeEventListener('popstate', this._onpopstate, false);
-  hasWindow && window.removeEventListener('hashchange', this._onpopstate, false);
+  window.removeEventListener('popstate', this._onpopstate, false);
+  window.removeEventListener('hashchange', this._onpopstate, false);
 };
 
 /**
  * Show `path` with optional `state` object.
  *
- * @param {string} path
- * @param {Object=} state
- * @param {boolean=} dispatch
- * @param {boolean=} push
- * @return {!Context}
  * @api public
  */
 
-Page.prototype.show = function(path, state, dispatch, push) {
+Page.prototype.show = function(path: string, state: object | undefined, dispatch: boolean | undefined, push: boolean | undefined): Context {
   var ctx = new Context(path, state, this),
     prev = this.prevContext;
   this.prevContext = ctx;
@@ -216,13 +483,13 @@ Page.prototype.show = function(path, state, dispatch, push) {
  * @api public
  */
 
-Page.prototype.back = function(path, state) {
+Page.prototype.back = function(path: string, state: object | undefined) {
   var page = this;
   if (this.len > 0) {
     var window = this._window;
-    // this may need more testing to see if all browsers
+    // TODO: this may need more testing to see if all browsers
     // wait for the next tick to go back in history
-    hasHistory && window.history.back();
+    window.history.back();
     this.len--;
   } else if (path) {
     setTimeout(function() {
@@ -243,7 +510,7 @@ Page.prototype.back = function(path, state) {
  * @param {string=} to
  * @api public
  */
-Page.prototype.redirect = function(from, to) {
+Page.prototype.redirect = function(from: string, to: string | undefined) {
   var inst = this;
 
   // Define route from a path to another
@@ -275,7 +542,7 @@ Page.prototype.redirect = function(from, to) {
  */
 
 
-Page.prototype.replace = function(path, state, init, dispatch) {
+Page.prototype.replace = function(path: string, state: object | undefined, init: boolean | undefined, dispatch: boolean | undefined): Context {
   var ctx = new Context(path, state, this),
     prev = this.prevContext;
   this.prevContext = ctx;
@@ -293,7 +560,7 @@ Page.prototype.replace = function(path, state, init, dispatch) {
  * @api private
  */
 
-Page.prototype.dispatch = function(ctx, prev) {
+Page.prototype.dispatch = function(ctx: Context, prev) {
   var i = 0, j = 0, page = this;
 
   function nextExit() {
@@ -331,7 +598,7 @@ Page.prototype.exit = function(path, fn) {
     return this.exit('*', path);
   }
 
-  var route = new Route(path, null, this);
+  var route = new Route(path, undefined, this);
   for (var i = 1; i < arguments.length; ++i) {
     this.exits.push(route.middleware(arguments[i]));
   }
@@ -417,7 +684,7 @@ Page.prototype.clickHandler = function(e) {
 
   if (this._hashbang) path = path.replace('#!', '');
 
-  if (pageBase && orig === path && (!isLocation || this._window.location.protocol !== 'file:')) {
+  if (pageBase && orig === path && (this._window.location.protocol !== 'file:')) {
     return;
   }
 
@@ -432,10 +699,7 @@ Page.prototype.clickHandler = function(e) {
 
 Page.prototype._onpopstate = (function () {
   var loaded = false;
-  if ( ! hasWindow ) {
-    return function () {};
-  }
-  if (hasDocument && document.readyState === 'complete') {
+  if (document.readyState === 'complete') {
     loaded = true;
   } else {
     window.addEventListener('load', function() {
@@ -450,7 +714,7 @@ Page.prototype._onpopstate = (function () {
     if (e.state) {
       var path = e.state.path;
       page.replace(path, e.state);
-    } else if (isLocation) {
+    } else {
       var loc = page._window.location;
       page.show(loc.pathname + loc.search + loc.hash, undefined, undefined, false);
     }
@@ -461,7 +725,7 @@ Page.prototype._onpopstate = (function () {
  * Event button.
  */
 Page.prototype._which = function(e) {
-  e = e || (hasWindow && this._window.event);
+  e = e || this._window.event;
   return null == e.which ? e.button : e.which;
 };
 
@@ -471,9 +735,9 @@ Page.prototype._which = function(e) {
  */
 Page.prototype._toURL = function(href) {
   var window = this._window;
-  if(typeof URL === 'function' && isLocation) {
+  if(typeof URL === 'function') {
     return new URL(href, window.location.toString());
-  } else if (hasDocument) {
+  } else {
     var anc = window.document.createElement('a');
     anc.href = href;
     return anc;
@@ -485,8 +749,8 @@ Page.prototype._toURL = function(href) {
  * @param {string} href
  * @api public
  */
-Page.prototype.sameOrigin = function(href) {
-  if(!href || !isLocation) return false;
+Page.prototype.sameOrigin = function(href: string) {
+  if(!href) return false;
 
   var url = this._toURL(href);
   var window = this._window;
@@ -510,7 +774,6 @@ Page.prototype.sameOrigin = function(href) {
  * @api private
  */
 Page.prototype._samePath = function(url) {
-  if(!isLocation) return false;
   var window = this._window;
   var loc = window.location;
   return url.pathname === loc.pathname &&
@@ -525,7 +788,7 @@ Page.prototype._samePath = function(url) {
  * @param {string} val - URL component to decode
  * @api private
  */
-Page.prototype._decodeURLEncodedURIComponent = function(val) {
+Page.prototype._decodeURLEncodedURIComponent = function(val: string) {
   if (typeof val !== 'string') { return val; }
   return this._decodeURLComponents ? decodeURIComponent(val.replace(/\+/g, ' ')) : val;
 };
@@ -581,7 +844,10 @@ function createPage() {
   pageFn.Context = Context;
   pageFn.Route = Route;
 
-  return pageFn;
+  // pageFn allows accessing len and current, but as Object.defineProperty
+  // is used, TypeScript doesn't detect it, so we have to convert to unknown first
+  // TODO: We should make it all more type-safe
+  return pageFn as unknown as Static;
 }
 
 /**
@@ -602,7 +868,7 @@ function createPage() {
  * @api public
  */
 
-function page(path, fn) {
+function page(path: string | Function | object, fn: Function | undefined) {
   // <callback>
   if ('function' === typeof path) {
     return page.call(this, '*', path);
@@ -610,7 +876,10 @@ function page(path, fn) {
 
   // route <path> to <callback ...>
   if ('function' === typeof fn) {
-    var route = new Route(/** @type {string} */ (path), null, this);
+    if ('string' !== typeof path) {
+      throw new Error('path must be a string if fn is set');
+    }
+    var route = new Route(path, undefined, this);
     for (var i = 1; i < arguments.length; ++i) {
       this.callbacks.push(route.middleware(arguments[i]));
     }
@@ -631,22 +900,22 @@ function page(path, fn) {
  * @param {Context} ctx
  * @api private
  */
-function unhandled(ctx) {
+function unhandled(ctx: Context) {
   if (ctx.handled) return;
   var current;
   var page = this;
   var window = page._window;
 
   if (page._hashbang) {
-    current = isLocation && this._getBase() + window.location.hash.replace('#!', '');
+    current = this._getBase() + window.location.hash.replace('#!', '');
   } else {
-    current = isLocation && window.location.pathname + window.location.search;
+    current = window.location.pathname + window.location.search;
   }
 
   if (current === ctx.canonicalPath) return;
   page.stop();
   ctx.handled = false;
-  isLocation && (window.location.href = ctx.canonicalPath);
+  window.location.href = ctx.canonicalPath;
 }
 
 /**
@@ -655,49 +924,59 @@ function unhandled(ctx) {
  * @param {string} s
  * @api private
  */
-function escapeRegExp(s) {
+function escapeRegExp(s: string) {
   return s.replace(/([.+*?=^!:${}()[\]|/\\])/g, '\\$1');
 }
 
-/**
- * Initialize a new "request" `Context`
- * with the given `path` and optional initial `state`.
- *
- * @constructor
- * @param {string} path
- * @param {Object=} state
- * @api public
- */
+class Context implements Context {
+  page: any;
+  title: string;
+  state: any;
+  canonicalPath: string;
+  path: string;
+  querystring: string;
+  pathname: string;
+  params: any;
+  hash: string;
 
-function Context(path, state, pageInstance) {
-  var _page = this.page = pageInstance || page;
-  var window = _page._window;
-  var hashbang = _page._hashbang;
+  /**
+    * Initialize a new "request" `Context`
+    * with the given `path` and optional initial `state`.
+    *
+    * @api public
+    */
+  constructor(path: string, state?: object, pageInstance?: any) { // TODO never anys mostly
+    const _page = this.page = pageInstance || page;
+    const window = _page._window;
+    const hashbang = _page._hashbang;
 
-  var pageBase = _page._getBase();
-  if ('/' === path[0] && 0 !== path.indexOf(pageBase)) path = pageBase + (hashbang ? '#!' : '') + path;
-  var i = path.indexOf('?');
+    const pageBase = _page._getBase();
+    if ('/' === path[0] && 0 !== path.indexOf(pageBase)) {
+      path = pageBase + (hashbang ? '#!' : '') + path;
+    }
+    const i = path.indexOf('?');
 
-  this.canonicalPath = path;
-  var re = new RegExp('^' + escapeRegExp(pageBase));
-  this.path = path.replace(re, '') || '/';
-  if (hashbang) this.path = this.path.replace('#!', '') || '/';
+    this.canonicalPath = path;
+    const re = new RegExp('^' + escapeRegExp(pageBase));
+    this.path = path.replace(re, '') || '/';
+    if (hashbang) this.path = this.path.replace('#!', '') || '/';
 
-  this.title = (hasDocument && window.document.title);
-  this.state = state || {};
-  this.state.path = path;
-  this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
-  this.pathname = _page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
-  this.params = {};
+    this.title = window.document.title;
+    this.state = state || {};
+    this.state.path = path;
+    this.querystring = ~i ? _page._decodeURLEncodedURIComponent(path.slice(i + 1)) : '';
+    this.pathname = _page._decodeURLEncodedURIComponent(~i ? path.slice(0, i) : path);
+    this.params = {};
 
-  // fragment
-  this.hash = '';
-  if (!hashbang) {
-    if (!~this.path.indexOf('#')) return;
-    var parts = this.path.split('#');
-    this.path = this.pathname = parts[0];
-    this.hash = _page._decodeURLEncodedURIComponent(parts[1]) || '';
-    this.querystring = this.querystring.split('#')[0];
+    // fragment
+    this.hash = '';
+    if (!hashbang) {
+      if (!~this.path.indexOf('#')) return;
+      const parts = this.path.split('#');
+      this.path = this.pathname = parts[0];
+      this.hash = _page._decodeURLEncodedURIComponent(parts[1]) || '';
+      this.querystring = this.querystring.split('#')[0];
+    }
   }
 }
 
@@ -713,10 +992,10 @@ Context.prototype.pushState = function() {
   var hashbang = page._hashbang;
 
   page.len++;
-  if (hasHistory) {
-      window.history.pushState(this.state, this.title,
-        hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-  }
+
+  window.history.pushState(this.state, this.title,
+    hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
+
 };
 
 /**
@@ -727,10 +1006,9 @@ Context.prototype.pushState = function() {
 
 Context.prototype.save = function() {
   var page = this.page;
-  if (hasHistory) {
-      page._window.history.replaceState(this.state, this.title,
-        page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
-  }
+
+  page._window.history.replaceState(this.state, this.title,
+    page._hashbang && this.path !== '/' ? '#!' + this.path : this.canonicalPath);
 };
 
 /**
@@ -743,18 +1021,18 @@ Context.prototype.save = function() {
  *   - `strict`       enable strict matching for trailing slashes
  *
  * @constructor
- * @param {string} path
- * @param {Object=} options
  * @api private
  */
 
-function Route(path, options, page) {
+function Route(path: string, options?: RouteOptions, page?: any) { // TODO never any
   var _page = this.page = page || globalPage;
   var opts = options || {};
   opts.strict = opts.strict || _page._strict;
   this.path = (path === '*') ? '(.*)' : path;
   this.method = 'GET';
-  this.regexp = pathtoRegexp(this.path, this.keys = [], opts);
+  const { regexp, keys } = pathToRegexp(this.path, opts);
+  this.regexp = regexp;
+  this.keys = keys;
 }
 
 /**
@@ -766,7 +1044,7 @@ function Route(path, options, page) {
  * @api public
  */
 
-Route.prototype.middleware = function(fn) {
+Route.prototype.middleware = function(fn: Function): Function {
   var self = this;
   return function(ctx, next) {
     if (self.match(ctx.path, ctx.params)) {
@@ -787,7 +1065,7 @@ Route.prototype.middleware = function(fn) {
  * @api private
  */
 
-Route.prototype.match = function(path, params) {
+Route.prototype.match = function(path: string, params: object): boolean {
   var keys = this.keys,
     qsIndex = path.indexOf('?'),
     pathname = ~qsIndex ? path.slice(0, qsIndex) : path,
@@ -800,7 +1078,7 @@ Route.prototype.match = function(path, params) {
   for (var i = 1, len = m.length; i < len; ++i) {
     var key = keys[i - 1];
     var val = this.page._decodeURLEncodedURIComponent(m[i]);
-    if (val !== undefined || !(hasOwnProperty.call(params, key.name))) {
+    if (val !== undefined || !(Object.prototype.hasOwnProperty.call(params, key.name))) {
       params[key.name] = val;
     }
   }
@@ -813,5 +1091,6 @@ Route.prototype.match = function(path, params) {
  * Module exports.
  */
 
-var globalPage = createPage();
-export { globalPage, globalPage as default };
+var globalPage: Static = createPage();
+export type { Callback, Context, Options, Route, RouteOptions, Static };
+export default globalPage;

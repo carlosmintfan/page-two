@@ -3,44 +3,43 @@
   "description": "Tiny client-side router – fork of page",
   "version": "1.0.1",
   "license": "MIT",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git://github.com/carlosmintfan/page-two.git"
   },
-  "component": {
-    "scripts": {
-      "page": "index.js"
-    }
-  },
-  "main": "index.js",
-  "browser": "page.js",
-  "module": "page.mjs",
+  "main": "dist/page.js",
+  "module": "dist/page.esm.js",
+  "types": "dist/page.d.ts",
   "scripts": {
     "engine-deps": "install-engine-dependencies",
-    "test": "jshint index.js test/tests.js && mocha test/tests.js",
+    "test": "mocha test/tests.js",
     "serve": "serve test --symlinks",
-    "test-cov": "jscoverage index.js index-cov.js; PAGE_COV=1 mocha test/tests.js -R html-cov > coverage.html",
-    "make": "rollup -c rollup.config.js"
+    "test-cov": "jscoverage src/page.ts index-cov.js; PAGE_COV=1 mocha test/tests.js -R html-cov > coverage.html",
+    "build": "rollup -c rollup.config.js"
   },
   "dependencies": {
     "path-to-regexp": "^8.2.0"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^28.0.1",
+    "@rollup/plugin-commonjs": "^28.0.2",
     "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.10.6",
     "chai": "^5.1.2",
-    "coveralls": "^3.1.1",
     "engine-dependencies": "^0.2.12",
     "express": "^4.21.1",
-    "jscoverage": "^0.6.0",
     "jsdom": "^26.0.0",
-    "jshint": "^2.13.6",
     "mocha": "^11.0.1",
     "mocha-lcov-reporter": "1.3.0",
     "pug": "^3.0.0",
-    "rollup": "^4.27.4",
+    "rollup": "^4.32.1",
+    "rollup-plugin-license": "^3.5.3",
     "serve": "*",
-    "should": "*"
+    "should": "*",
+    "tslib": "^2.8.1",
+    "typescript": "^5.7.3"
   },
   "engineDependencies": {
     "node": {
@@ -52,8 +51,6 @@
     }
   },
   "files": [
-    "index.js",
-    "page.js",
-    "page.mjs"
+    "dist/"
   ]
 }

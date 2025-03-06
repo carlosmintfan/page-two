@@ -1,5 +1,6 @@
-/* globals before, after, chai, expect, page, describe, it */
-(async function() {
+import { expect } from 'chai';
+/* globals before, after, describe, it */
+await (async function() {
 
   'use strict';
 
@@ -12,10 +13,6 @@
     setbase = true,
     hashbang = false,
     decodeURLComponents = true,
-    chai = this.chai,
-    expect = this.expect,
-    page = this.page,
-    globalPage = this.page,
     baseTag,
     frame,
     $,
@@ -26,15 +23,7 @@
   }
 
   before(function() {
-    if (isNode) {
-      chai = require('chai');
-      expect = chai.expect;
-      globalPage = process.env.PAGE_COV ?
-        require('../index-cov') : require('../index');
-    } else {
-      globalPage = window.page;
-      expect = chai.expect;
-    }
+    if (!isNode) {globalPage = window.page;}
 
     $ = function(sel) {
       return frame.contentWindow.document.querySelector(sel);
