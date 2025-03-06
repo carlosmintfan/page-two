@@ -16,7 +16,7 @@ page()
 You can install `page-two` by npm:
 
 ```bash
-$ npm install page
+$ npm install page-two
 ```
 
 Or use with jsDelivr CDN.
